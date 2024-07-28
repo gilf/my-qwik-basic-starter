@@ -1,11 +1,31 @@
 import { component$, Slot, useStyles$ } from "@builder.io/qwik";
-import { routeLoader$ } from "@builder.io/qwik-city";
+import {routeAction$, routeLoader$, zod$} from "@builder.io/qwik-city";
 import type { RequestHandler } from "@builder.io/qwik-city";
 
 import Header from "../components/starter/header/header";
 import Footer from "../components/starter/footer/footer";
 
 import styles from "./styles.css?inline";
+import {z} from "zod";
+import {CartItem, getCartItemsFromCookie, updateCartItemsCookie} from "~/routes/cart";
+
+export const useAddToCartAction = routeAction$(
+    async ({ id }, { redirect, cookie }) => {
+        console.log("Add to cart", id);
+        const cartItems: CartItem[] = getCartItemsFromCookie(cookie);
+        const existingItem = cartItems.find((item) => item.productId === id);
+        if (existingItem) {
+            existingItem.qty++;
+        } else {
+            cartItems.push({ productId: id, qty: 1 });
+        }
+        updateCartItemsCookie(cookie, cartItems);
+        throw redirect(302, "/cart/");
+    },
+    zod$({
+        id: z.string(),
+    })
+);
 
 export const onGet: RequestHandler = async ({ cacheControl }) => {
   // Control caching for this request for best performance and to reduce hosting costs:
